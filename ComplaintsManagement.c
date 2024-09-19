@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 
 void DrawScreenHeader(const char[], const char[]);
 int ReadNumber(const char[]);
@@ -15,6 +16,12 @@ void ShowMainMenuScreen(void);
 void GoBackToMainMenuScreen(void);
 
 void ShowAddComplaintScreen(void);
+		enum enComplaintCategory;
+		enum enClaimStatus;
+		enum enComplaintCategory GetComplaintCategory(void);
+		bool IsIDExist(int );
+		int GenerateUniqueID();
+		void GetSystemDate(char* , size_t );
 void ShowComplaintsListScreen(void);
 void ShowDeleteComplaintScreen(void);
 void ShowUpdateComplaintScreen(void);
@@ -24,6 +31,8 @@ void ShowStaticsMenuScreen(void);
 
 int main()
 {
+	//seeds the random numbers generator in C,called only once;
+	srand(time(NULL));
 	ShowMainMenuScreen();
 	return 0;
 }
@@ -72,6 +81,11 @@ void ReadString(char* S1, size_t Size, const char Message[])
 		S1[StringLength - 1] = '\0';
 }
 
+int RandomNumber(int From, int To)
+{
+	return (rand() % (To - From + 1)) + From;
+}
+
 void DrawScreenHeader(const char Title[], const char Subtitle[])
 {
 	printf("\nAlami Co,ltd all rights reserved 2024");
@@ -88,18 +102,87 @@ enum enMainMenuOption
 
 enum enMainMenuOption ReadMainMenuOption()
 {
-	return (enum enMainMenuOption)ReadNumberInRange(1, 7, "Choose what do you wanna do [1~7] : ");
+	return (enum enMainMenuOption)ReadNumberInRange(1, 7, "\nChoose what do you wanna do [1~7] : ");
 }
 
+enum enComplaintCategory
+{
+	eUndefined = 1
+};
+enum enClaimStatus
+{
+	eRejected = -1,eInProgress=0,eResolved=1
+};
+
+typedef struct
+{
+	int ID;
+	char Reason[100];
+	char Description[200];
+	enum enClaimCategory Category;
+	enum enStatus Status;
+	char Date[20];
+
+}stComplaint;
+
+stComplaint AllComplaints[100];
+
+int ComplaintsCounter = 0;
+
+
+
+bool IsIDExist(int ID)
+{
+	for (short i = 0; i < ComplaintsCounter; i++)
+		if (AllComplaints[i].ID == ID)
+			return true;
+	//if you reached here this means that the ID does not exist!
+	return false;
+}
+int GenerateUniqueID()
+{
+	int ID=0;
+	do
+	{
+		ID = RandomNumber(1, 99);
+	} while (IsIDExist(ID));
+	return ID;
+}
+enum enComplaintCategory GetComplaintCategory()
+{
+	return eUndefined;
+	//we will handle this issue later
+}
+void GetSystemDate(char* sDate,size_t Size)
+{
+	time_t now= time(NULL);//number of secs since 1/1/1970
+	sDate = ctime_s(sDate,Size, & now);
+}
 void ShowAddComplaintScreen()
 {
-	printf("\n add a complaiment screen will be here.. ");
+	//printf("\n add a complaiment screen will be here.. ");
+	DrawScreenHeader("Complaints manager", "Add a complaint");
+	AllComplaints[ComplaintsCounter];
+	AllComplaints[ComplaintsCounter].ID = GenerateUniqueID();
+	ReadString(AllComplaints[ComplaintsCounter].Reason, sizeof(AllComplaints[ComplaintsCounter].Reason), "\nComplaint Reason : ");
+	ReadString(AllComplaints[ComplaintsCounter].Description, sizeof(AllComplaints[ComplaintsCounter].Description), "\nDescription : ");
+	AllComplaints[ComplaintsCounter].Status = eInProgress;
+	AllComplaints[ComplaintsCounter].Category = GetComplaintCategory(AllComplaints[ComplaintsCounter].Description);
+	GetSystemDate(AllComplaints[ComplaintsCounter].Date,sizeof(AllComplaints[ComplaintsCounter]));
+
+	printf("\n\a added successfully!");
+	printf("\n\n the following are the complaint's info : ");
+	printf("\n Reason : %s", AllComplaints[ComplaintsCounter].Reason);
+	printf("\n Description : %s", AllComplaints[ComplaintsCounter].Description);
+	printf("\n\n date : %s", AllComplaints[ComplaintsCounter].Date);
+	ComplaintsCounter++;
 }
+
+
 
 void ShowComplaintsListScreen()
 {
 	printf("\n Complaints list screen will be here..");
-
 }
 
 void ShowDeleteComplaintScreen()
