@@ -26,6 +26,15 @@ void ShowComplaintsListScreen(void);
 void ShowDeleteComplaintScreen(void);
 void ShowUpdateComplaintScreen(void);
 void ShowFindClaimScreen(void);
+		enum enFindComplaintOption;
+		enum enFindComplaintOption ReadFindComplaintOption(void);
+		bool FindComplaintByID(stComplaint* , int );
+		void PrintComplaintInfo(stComplaint );
+		void ShowFindComplaintByIDScreen(void);
+		void ShowFindComplaintByNameScreen(void);
+		void ShowFindComplaintByDateScreen(void);
+		void ShowFindComplaintByStatusScreen(void);
+		void PerformFindComplaintMenuOption(enum enFindComplaintOption );
 void ShowOrderedClaimsScreen(void);
 void ShowStaticsMenuScreen(void);
 
@@ -155,8 +164,10 @@ enum enComplaintCategory GetComplaintCategory()
 }
 void GetSystemDate(char* sDate,size_t Size)
 {
-	time_t now= time(NULL);//number of secs since 1/1/1970
-	sDate = ctime_s(sDate,Size, & now);
+	 time_t Now= time(NULL);//get current time
+	//sDate = ctime_s(sDate,Size, & Now);
+	struct tm *CurrentTime=localtime(&Now);
+	sprintf_s(sDate, Size, "%02d/%02d/%d", CurrentTime->tm_mday, CurrentTime->tm_mon + 1, CurrentTime->tm_year + 1900);
 }
 void ShowAddComplaintScreen()
 {
@@ -195,10 +206,138 @@ void ShowUpdateComplaintScreen()
 	printf("\n update complaint screen will be here.. ");
 }
 
+
+enum enFindComplaintOption
+{
+	eComplaintID = 1, eClientName = 2, eSubmissionDate, eStatus
+};
+enum enFindComplaintOption ReadFindComplaintOption()
+{
+	return (enum enFindComplaintOption)ReadNumberInRange(1, 4, "\nMake a choice to serch by : ");
+}
+bool FindComplaintByID(stComplaint* Complaint, int ID)
+{
+	for (short i = 0; i < ComplaintsCounter; i++)
+	{
+		if (AllComplaints[i].ID == ID)
+		{
+			*Complaint = AllComplaints[i];
+			return true;
+		}
+	}
+	//if you reached here this means that the complaint is not found!
+	return false;
+}
+void PrintComplaintInfo(stComplaint Complaint)
+{
+	printf("\n\n\t the following are the complaint's info : ");
+	printf("\n %s%02d%s", "__________________ID = ", Complaint.ID, "_____________________");
+	printf("\n\t ID  : %d", Complaint.ID);
+	printf("\n\t Reason : %s", Complaint.Reason);
+	printf("\n\t Description : %s", Complaint.Description);
+	printf("\n\t Status : %s", (Complaint.Status == eRejected ? "Rejected" : Complaint.Status == eInProgress ? "Pending" : "Resolved"));
+	printf("\n %s%s", "_______________________", "_______________________");
+
+}
+void ShowFindComplaintByIDScreen()
+{
+	//printf("\n Find complaint by ID screen will  be here..");
+	DrawScreenHeader("Find Complaint", "By ID");
+
+	stComplaint Complaint;
+	if (FindComplaintByID(&Complaint,ReadPositiveNumber("\n enter an ID to serch for : ")))
+	{
+		printf("\n found ! \n");
+		PrintComplaintInfo(Complaint);
+	}
+	else
+		printf("\n the complaint that you're looking for doesn't exist.");
+
+}
+void ShowFindComplaintByNameScreen()
+{
+	printf("\n ShowFindComplaintByNameScreen will be here.. ");
+}
+void ShowFindComplaintByDateScreen()
+{
+	//printf("\n ShowFindComplaintByDateScreen will be here..");
+	DrawScreenHeader("Find Complaint", "By Submission Date");
+	short Counter = 0;
+	stComplaint Complaint;
+	ReadString(Complaint.Date, sizeof(Complaint.Date), "\nEnter a Date \"dd/mm/yyyy\" : ");
+	for (short i = 0; i < ComplaintsCounter; i++)
+	{
+		if (strcmp(AllComplaints[i].Date, Complaint.Date)==0)
+		{
+			FindComplaintByID(&Complaint, AllComplaints[i].ID);
+			printf("\n\nComplaint %d : \n",++Counter);
+			PrintComplaintInfo(Complaint);
+		}
+	}
+	(Counter == 0)? printf("\n there is no complaint for this Date : \"%s\"", Complaint.Date) : printf("");
+
+}
+void ShowFindComplaintByStatusScreen()
+{
+	//printf("\n ShowFindComplaintByStatusScreen will be here.. ");
+	DrawScreenHeader("Find Complaint", "By Status");
+	printf("\n\n wich status are you looking for : ");
+	printf("\n%s\n%s\n%s\n", "[1] Rejected", "[2] Pending" ,"[3] Resolved");
+
+	stComplaint Complaint;
+	Complaint.Status= (enum enClaimStatus)ReadNumberInRange(1, 3, "\n Choose from the menu above : ")-2;
+	short Counter = 0;
+	for (short i = 0; i < ComplaintsCounter; i++)
+	{
+		if (AllComplaints[i].Status == Complaint.Status)
+		{
+			FindComplaintByID(&Complaint, AllComplaints[i].ID);
+			printf("\n\nComplaint %d : \n", ++Counter);
+			PrintComplaintInfo(Complaint);
+
+		}
+	}
+	(Counter == 0) ? printf("\n No complaint matches the status you're looking for") : printf("");
+
+}
+void PerformFindComplaintMenuOption(enum enFindComplaintOption Option)
+{
+	switch (Option)
+	{
+	case eComplaintID:
+		system("cls");
+		ShowFindComplaintByIDScreen();
+		break;
+	case eClientName:
+		system("cls");
+		ShowFindComplaintByNameScreen();
+		break;
+	case eSubmissionDate:
+		system("cls");
+		ShowFindComplaintByDateScreen();
+		break;
+	case eStatus:
+		system("cls");
+		ShowFindComplaintByStatusScreen();
+		break;
+	default:
+		break;
+	}
+}
 void ShowFindClaimScreen()
 {
-	printf("\n find claim screen will be here.. ");
+	//printf("\n find claim screen will be here.. ");
+
+	DrawScreenHeader("Complaints manager", "Find Complaint screen");
+	printf("\n\n You can serch for a specific complaint by : ");
+	printf("\n\n \t[1] Complaint ID .");
+	printf("\n \t[2] Client Name .");
+	printf("\n \t[3] Submission Date.");
+	printf("\n \t[4] By Status.");
+	 
+	PerformFindComplaintMenuOption(ReadFindComplaintOption());
 }
+
 
 void ShowOrderedClaimsScreen()
 {
