@@ -3,6 +3,23 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <Windows.h>
+
+
+void ComplaintsManager(void);
+		typedef struct stUser;
+		void SetDefaultAdminInfo(void);
+		bool CheckIdentity(char*, size_t, char*, size_t);
+		void SignIn(void);
+		bool UserNameExist(char*, size_t);
+		bool IsLowerCaseExist(char*, size_t);
+		bool IsUpperCaseExist(char*, size_t);
+		bool IsDigitExist(char*, size_t);
+		bool IsSpecialCharExist(char*, size_t);
+		bool CheckPasswordStrength(char* );
+		void SignUp(void);
+		void ShowEndProgramScreen(void);
+
 
 void DrawScreenHeader(const char[], const char[]);
 int ReadNumber(const char[]);
@@ -28,7 +45,7 @@ void ShowUpdateComplaintScreen(void);
 void ShowFindClaimScreen(void);
 		enum enFindComplaintOption;
 		enum enFindComplaintOption ReadFindComplaintOption(void);
-		bool FindComplaintByID(stComplaint* , int );
+		bool FindComplaintByID(struct stComplaint* , int );
 		void PrintComplaintInfo(stComplaint );
 		void ShowFindComplaintByIDScreen(void);
 		void ShowFindComplaintByNameScreen(void);
@@ -42,7 +59,8 @@ int main()
 {
 	//seeds the random numbers generator in C,called only once;
 	srand(time(NULL));
-	ShowMainMenuScreen();
+	//ShowMainMenuScreen();
+	ComplaintsManager();
 	return 0;
 }
 
@@ -405,8 +423,205 @@ void ShowMainMenuScreen()
 	printf("\n%10s%s", "", "[5] Find Claim.");
 	printf("\n%10s%s", "", "[6] Claims ordered by priority.");
 	printf("\n%10s%s", "", "[7] Statics and Reports.");
+	printf("\n%10s%s", "", "[8] MANAGE USERS.");
+	printf("\n%10s%s", "", "[7] LOGOUT.");
+
+
 
 	PerformMainMenuOption(ReadMainMenuOption());
 
 
+}
+
+typedef struct stUser
+{
+	char FullName[45];
+	char UserName[20];
+	char Password[20];
+	int Permssions;
+
+}stUser;
+
+stUser aUsers[100];
+short UsersCounter = 1;
+stUser CurrentUser;
+
+void SetDefaultAdminInfo()
+{
+	char* Name = "Mohamed", * UserName = "admin", * Password = "admin";
+	strcpy_s(aUsers[0].FullName, sizeof(aUsers[0].FullName), Name);
+	strcpy_s(aUsers[0].UserName, sizeof(aUsers[0].UserName), UserName);
+	strcpy_s(aUsers[0].Password, sizeof(aUsers[0].Password), Password);
+	aUsers[0].Permssions = -1;
+}
+
+bool CheckIdentity(char* UserName, size_t UserNameSize, char* Password, size_t PasswordSize)
+{
+	for (short i = 0; i < UsersCounter; i++)
+	{
+		if (strcmp(UserName, aUsers[i].UserName) == 0 && strcmp(Password, aUsers[i].Password)==0)
+		{
+			CurrentUser = aUsers[i];
+			return true;
+		}
+	}
+	return false;
+}
+
+void SignIn()
+{
+	system("cls");
+	DrawScreenHeader("COMPLAINTS SECTION", "SIGN IN");
+
+	char UserName[20], Password[20];
+	short Counter = 3;
+	while (true)
+	{
+		ReadString(UserName, sizeof(UserName), "\nUserName : ");
+		ReadString(Password, sizeof(Password), "\nPassword : ");
+		if (!CheckIdentity(UserName, sizeof(UserName), Password, sizeof(Password)))
+		{
+			printf("\n\a wrong username/password!");
+			printf("\n You have (%hd) trials to login : ", --Counter);
+		}
+		else
+		{
+			ShowMainMenuScreen();
+
+
+		}
+
+		if (Counter == 0)
+		{
+			//sleep function for 30sec
+			printf("\n try again after 10seconds!\n\n\a\a\a");
+			Sleep(10 * 1000);
+
+			Counter = 0;
+		}
+
+	}
+
+}
+
+bool UserNameExist(char* UserName, size_t Size)
+{
+	for (short i = 0; i < UsersCounter; i++)
+	{
+		if (strcmp(aUsers[i].UserName, UserName)==0)
+			return true;
+
+	}
+	//if you reached here then the User with this username doesn't exist
+	return false;
+}
+
+bool IsLowerCaseExist(char* S1, size_t Length)
+{
+	for (short i = 0; i < Length; i++)
+	{
+		if ((int)S1[i] >= 97 && (int)S1[i] <= 122)
+			return true;
+	}
+	return false;
+}
+
+
+bool IsUpperCaseExist(char* S1, size_t Length)
+{
+	for (short i = 0; i < Length; i++)
+	{
+		if ((int)S1[i] >= 65 && (int)S1[i] <= 90)
+			return true;
+	}
+	return false;
+
+}
+bool IsDigitExist(char *S1,size_t Length)
+{
+	for (short i = 0; i < Length; i++)
+	{
+		if ((int)S1[i] >= 48 && (int)S1[i] <= 57)
+			return true;
+	}
+	return false;
+
+}
+bool IsSpecialCharExist(char* S1, size_t Length)
+{
+	for (short i = 0; i < Length; i++)
+	{
+		if ((int)S1[i] >= 32 && (int)S1[i] <= 64)
+			return true;
+	}
+	return false;
+
+}
+
+bool CheckPasswordStrength(char *Password)
+{
+	size_t len = strlen(Password);
+	return (len >= 8 && IsDigitExist(Password, len) && IsUpperCaseExist(Password, len)
+		&& IsSpecialCharExist(Password, len) && IsLowerCaseExist(Password, len));
+
+}
+
+void SignUp()
+{
+	system("cls");
+	DrawScreenHeader("COMPLAINTS SECTION", "SIGN UP");
+	char UserName[20], Password[20], Name[40];
+	ReadString(Name, sizeof(Name), "\nYour Name : ");
+
+
+	ReadString(UserName, sizeof(UserName), "\nUserName : ");
+	while (UserNameExist(UserName, sizeof(UserName)))
+	{
+		printf("\n Username already exists try again..");
+		ReadString(UserName, sizeof(UserName), "\nUserName : ");
+
+	}
+
+	ReadString(Password, sizeof(Password), "\nPassword : ");
+	while (!CheckPasswordStrength(Password))
+	{
+		printf("\n a strong password should contains at last : CAPITAL letter, small letter,number and special char. ");
+		ReadString(Password, sizeof(Password), "\nPassword : ");
+
+	}
+	strcpy_s(aUsers[++UsersCounter - 1].FullName, sizeof(aUsers[UsersCounter - 1].FullName), Name);
+	strcpy_s(aUsers[UsersCounter - 1].UserName, sizeof(aUsers[UsersCounter - 1].UserName), UserName);
+	strcpy_s(aUsers[UsersCounter - 1].Password, sizeof(aUsers[UsersCounter - 1].Password), Password);
+
+
+	printf("\nDone Successfully! \nusername : %s , Password : %s\npress any key to continue..", UserName, Password);
+	
+	system("pause>0");
+	SignIn();
+}
+
+
+void ShowEndProgramScreen()
+{
+	printf("\n program ends ");
+	system("pause>0");
+}
+
+
+void ComplaintsManager()
+{
+	DrawScreenHeader("COMPLAINTS SECTION", "WELCOME");
+
+	printf("\n\n by submitting your complaints you help us to improve our sevices :-)");
+
+	printf("\n\n\n Please Sign in  if you already have an account .\n if you don't then thanks for singing up : ");
+	printf("\n\n\t [1] SIGN UP ");
+	printf("\n\n\t [2] SIGN IN \n");
+	SetDefaultAdminInfo();
+	int Choice=ReadNumberInRange(1, 2, "\n please make a choice from the menu above ,you can either sign up or sign in : \n");
+
+	Choice == 1 ? SignUp() : SignIn();
+	
+	//failed to sign in 
+	ShowEndProgramScreen();
 }
