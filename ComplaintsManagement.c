@@ -155,6 +155,8 @@ enum enClaimStatus
 	eRejected = -1,eInProgress=0,eResolved=1
 };
 
+enum enComplaintPriority{eHigh=1,eMedium=2,eLow=3};
+
 typedef struct
 {
 	int ID;
@@ -164,6 +166,8 @@ typedef struct
 	enum enClaimStatus Status;
 	char Date[20];
 	char MadeBy[40];
+	char Notes[40];
+	enum enComplaintPriority Priority;
 
 }stComplaint;
 
@@ -241,6 +245,7 @@ void GetSystemDate(char* sDate,size_t Size)
 				printf("\n Are you sure do you want to delete the Complaint above ? [Y/N]..");
 				char Answer = 'n';
 				scanf_s(" %c",&Answer);//!
+				getchar();
 				if (tolower(Answer) == 'y')
 				{
 					short i = 0;
@@ -355,9 +360,26 @@ void GetSystemDate(char* sDate,size_t Size)
 
 }
 			void ShowFindComplaintByNameScreen()
-{
-	printf("\n ShowFindComplaintByNameScreen will be here.. ");
-}
+			{
+				//printf("\n ShowFindComplaintByNameScreen will be here.. ");
+				DrawScreenHeader("Find Complaint", "By Name");
+				short Counter = 0;
+				stComplaint Complaint;
+				ReadString(Complaint.MadeBy, sizeof(Complaint.MadeBy), "\nEnter a Customer name : ");
+				for (short i = 0; i < ComplaintsCounter; i++)
+				{
+					if (strcmp(AllComplaints[i].MadeBy, Complaint.MadeBy) == 0)
+					{
+						FindComplaintByID(&Complaint, AllComplaints[i].ID);
+						printf("\n\nComplaint %d : \n", ++Counter);
+						PrintComplaintInfo(Complaint);
+						break;
+					}
+				}
+				(Counter == 0) ? printf("\n no complaints for this name : \"%s\"", Complaint.MadeBy) : printf("");
+
+
+			}
 			void ShowFindComplaintByDateScreen()
 {
 	//printf("\n ShowFindComplaintByDateScreen will be here..");
@@ -372,6 +394,7 @@ void GetSystemDate(char* sDate,size_t Size)
 			FindComplaintByID(&Complaint, AllComplaints[i].ID);
 			printf("\n\nComplaint %d : \n",++Counter);
 			PrintComplaintInfo(Complaint);
+			break;
 		}
 	}
 	(Counter == 0)? printf("\n there is no complaint for this Date : \"%s\"", Complaint.Date) : printf("");
@@ -437,10 +460,67 @@ void GetSystemDate(char* sDate,size_t Size)
 	 
 	PerformFindComplaintMenuOption(ReadFindComplaintOption());
 }
+
+		void SortComplaintsByPriority()
+		{
+			for (short i = 0; i < ComplaintsCounter - 1; i++)
+			{
+				for (short j = 0; j < ComplaintsCounter - i - 1; j++)
+				{
+					if (AllComplaints[j].Priority > AllComplaints[j + 1].Priority)
+					{
+						stComplaint tempComplaint = AllComplaints[j];
+						AllComplaints[j] = AllComplaints[j + 1];
+						AllComplaints[j + 1] = tempComplaint;
+					}
+				}
+			}
+
+
+				/*
+				
+						for (size_t i = 0; i < ArrLength-1; i++)
+						{
+							for (size_t j = 0; j < ArrLength-i-1; j++)
+							{
+								if (Arr[j] > Arr[j+1 ])
+								{
+									Swap(Arr[j], Arr[j + 1]);
+								}
+
+							}
+						}
+
+				*/
+		}
+		void PrintSortedComplaintsByPriority()
+		{
+			
+			printf("\n____________________________________________________________________________");
+			printf("\n|%-4s|%-60s|%-10s|", "ID", "Description ", "Priority");
+			printf("\n____________________________________________________________________________");
+
+			if (ComplaintsCounter > 0)
+			{
+				for (short i = 0; i < ComplaintsCounter; i++)
+				{
+					printf("\n|%-4d|%-60s|%-10s|",AllComplaints[i].ID ,AllComplaints[i].Description,
+						AllComplaints[i].Priority == eHigh ? "High" : AllComplaints[i].Priority == eMedium ? "Medium" : "Low");
+				}
+			}
+			else
+				printf("\n\t\t no available complaints in the system!");
+			printf("\n____________________________________________________________________________\n");
+
+		}
 		void ShowOrderedClaimsScreen()
-{
-	printf("\n ordered claims list screen will be here..");
-}
+		{
+			//printf("\n ordered claims list screen will be here..");
+			DrawScreenHeader("Ordered Complaints", "By Priority");
+			SortComplaintsByPriority();
+			PrintSortedComplaintsByPriority();
+
+		}
 		void ShowStaticsMenuScreen()
 {
 	printf("\n statics and reports menu screen will be here.. ");
@@ -451,7 +531,44 @@ void GetSystemDate(char* sDate,size_t Size)
 }
 		void ShowProcessComplaintScreen()
 		{
-			printf("\n process complaintscreen will be here..");
+			//printf("\n process complaintscreen will be here..");
+			DrawScreenHeader("Complaints Manager", "Process Complaint");
+		
+			stComplaint Complaint;
+			if (FindComplaintByID(&Complaint, ReadPositiveNumber("\n enter an ID to serch for : ")))
+			{
+				printf("\n found ! \n");
+				PrintComplaintInfo(Complaint);
+
+				printf("\nto mark it as \"rejected\" choose -1 ");
+				printf("\nto mark it as \"in progress\" choose 0 ");
+				printf("\nto mark it as \"solved\" choose 1 ");
+
+				enum enClaimStatus NewStatus =(enum enClaimStatus) ReadNumberInRange(-1,1,"\n your Choice : ");
+				for (short i = 0; i < ComplaintsCounter; i++)
+				{
+					if (AllComplaints[i].ID == Complaint.ID)
+					{
+						AllComplaints[i].Status = NewStatus;
+						printf("\ndo you want to add notes : [Y/N]");
+						char Answer = 'n';
+						scanf_s(" %c", &Answer);
+						getchar();
+						if (tolower(Answer) == 'y')
+						{						
+
+							ReadString(AllComplaints[i].Notes, sizeof(AllComplaints[i].Notes), "\n your notes : ");
+						}
+
+						break;
+					}
+				}
+			}
+			else
+				printf("\n the complaint that you're looking for doesn't exist.");
+
+
+
 		}
 		void PerformUsersMenuOption(enum enMainMenuOption Option)
 {
@@ -461,40 +578,45 @@ void GetSystemDate(char* sDate,size_t Size)
 		system("cls");
 		ShowComplaintsListScreen();
 		GoBackToMainMenuScreen();
+		break;
 	case eUpdateComplaint:
 		system("cls");
 		ShowUpdateComplaintScreen();
 		GoBackToMainMenuScreen();
-
+		break;
 	case eDeleteComplaint:
 		system("cls");
 		ShowDeleteComplaintScreen();
 		GoBackToMainMenuScreen();
+		break;
 	case eFindClaim:
 		system("cls");
 		ShowFindClaimScreen();
 		GoBackToMainMenuScreen();
+		break;
 	case eProcessComplaint:
 		system("cls");
 		ShowProcessComplaintScreen();
 		GoBackToMainMenuScreen();
-
+		break;
 	case eShowOrderedClaims:
 		system("cls");
 		ShowOrderedClaimsScreen();
 		GoBackToMainMenuScreen();
+		break;
 	case eStatics:
 		system("cls");
 		ShowStaticsMenuScreen();
 		GoBackToMainMenuScreen();
+		break;
 	case eManageUsers:
 		system("cls");
 		ShowManageUsersScreen();
 		GoBackToMainMenuScreen();
+		break;
 	case eExist:  
 		break;
 	default:
-
 		break;
 	}
 }
@@ -517,8 +639,6 @@ void GetSystemDate(char* sDate,size_t Size)
 	printf("\n%10s%s", "", "[7] Statics and Reports.");
 	printf("\n%10s%s", "", "[8] MANAGE USERS.");
 	printf("\n%10s%s", "", "[9] EXIT.");
-
-
 
 
 	PerformUsersMenuOption(ReadMainMenuOption());
@@ -545,6 +665,43 @@ void GetSystemDate(char* sDate,size_t Size)
 	system("pause>0");
 	ShowClientsMenuScreen();
 }
+
+
+		void LowerAllString(char *S1,size_t Length)
+		{
+			for (size_t i = 0; i < Length; i++)
+			{
+				S1[i] = tolower(S1[i]);
+			}
+		}
+
+		void SetComplaintPriority()
+		{
+			LowerAllString(AllComplaints[ComplaintsCounter].Description, strlen(AllComplaints[ComplaintsCounter].Description));
+			char HighPriorityKeyWords[2][20] = { "urgent","immediate" };
+			char MediumPriorityKeyWords[2][20] = { "important","problem" };
+			for (size_t i = 0; i < 2; i++)
+			{
+				if (strstr(AllComplaints[ComplaintsCounter].Description,HighPriorityKeyWords[i]) != NULL)
+				{
+					AllComplaints[ComplaintsCounter].Priority = eHigh;
+					return;//to exist func immediatly
+				}
+			}
+
+			for (size_t i = 0; i < 2; i++)
+			{
+				if (strstr(AllComplaints[ComplaintsCounter].Description, MediumPriorityKeyWords[i])!= NULL)
+				{
+					AllComplaints[ComplaintsCounter].Priority = eMedium;
+					return;
+				}
+				
+			}
+			//if we reched here,this means that the complaint has a low priority
+			AllComplaints[ComplaintsCounter].Priority = eLow;
+
+		}
 		void ShowAddComplaintScreen()
 		{
 			//printf("\n add a complaiment screen will be here.. ");
@@ -557,11 +714,14 @@ void GetSystemDate(char* sDate,size_t Size)
 			ReadString(AllComplaints[ComplaintsCounter].Category, sizeof(AllComplaints[ComplaintsCounter].Category), "\nCategory : ");
 			GetSystemDate(AllComplaints[ComplaintsCounter].Date, sizeof(AllComplaints[ComplaintsCounter]));
 			strcpy_s(AllComplaints[ComplaintsCounter].MadeBy, sizeof(AllComplaints[ComplaintsCounter].MadeBy), CurrentUser.FullName);
+		    SetComplaintPriority();
+			
 			printf("\n\a added successfully!");
 			printf("\n\n the following are the complaint's info : ");
 			printf("\n Reason : %s", AllComplaints[ComplaintsCounter].Reason);
 			printf("\n Description : %s", AllComplaints[ComplaintsCounter].Description);
 			printf("\n\n date : %s", AllComplaints[ComplaintsCounter].Date);
+
 			ComplaintsCounter++;
 		}
 		void ShowComplaintsListByClientScreen()
@@ -615,11 +775,6 @@ void ShowMainMenuScreen()
 {
 	CurrentUser.IsClient ? ShowClientsMenuScreen() : ShowUsersMenuScreen();
 }
-
-
-
-
-
 
 
 
