@@ -81,6 +81,7 @@ short UsersCounter = 1;
 stUser CurrentUser;
 
 
+
 int ReadNumber(const char Message[])
 {
 	int Number = 0;
@@ -137,6 +138,24 @@ void DrawScreenHeader(const char Title[], const char Subtitle[])
 	printf("\n%20s%s\n%25s%s","", Title,"", Subtitle);
 	printf("\n%15s%s\n", "", "========================================");
 
+}
+
+void PrintAccessDeniedMessage()
+{
+	system("cls");
+	DrawScreenHeader("ACCESS DENIED", "CONTACT YOUR ADMIN");
+}
+
+enum enPermissions
+{
+	pNothing=0,pFullAccess=-1,pComplaintsList=1,pUpdateComplaint=2,pDeleteComplaint=4,pFindComplaint=8,pProcessComplaint=16,
+	pOrderedComplaintsList=32,pStatistics=64,pManageUsers=128
+};
+
+bool CheckAccessRights(enum enPermission Permission)
+{
+	return ((enum enPermission)CurrentUser.Permssions) == pNothing ? false : (enum enPermission)CurrentUser.Permssions == pFullAccess ? true 
+		: CurrentUser.Permssions & Permission == Permission ? true : false;
 }
 
 enum enMainMenuOption
@@ -210,6 +229,11 @@ void GetSystemDate(char* sDate,size_t Size)
 		void ShowComplaintsListScreen()
 		{
 			//printf("\n Complaints list screen will be here..");
+			if (!CheckAccessRights(pComplaintsList))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
 			DrawScreenHeader("Complaints Manager", "Complaints list ");
 			printf("\n%s","_____________________________________________________________________________________________________________________________________________________");
 			printf("\n|%-40s|%-4s|%-20s|%-60s|%-20s|", "Name","ID", "Date", "Description", "Status");
@@ -234,6 +258,12 @@ void GetSystemDate(char* sDate,size_t Size)
 		void ShowDeleteComplaintScreen()
 		{
 			//printf("\n delete complaint screen will be here.. ");
+			if (!CheckAccessRights(pDeleteComplaint))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
+
 			DrawScreenHeader("Complaints Manager", "Delete Complaint");
 
 
@@ -274,6 +304,12 @@ void GetSystemDate(char* sDate,size_t Size)
 		void ShowUpdateComplaintScreen()
 		{
 			///printf("\n update complaint screen will be here.. ");
+			if (!CheckAccessRights(pUpdateComplaint))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
+
 			DrawScreenHeader("Complaint Manager", "Update complaint");
 
 			stComplaint Complaint;
@@ -450,6 +486,12 @@ void GetSystemDate(char* sDate,size_t Size)
 		void ShowFindClaimScreen()
 {
 	//printf("\n find claim screen will be here.. ");
+			if (!CheckAccessRights(pFindComplaint))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
+
 
 	DrawScreenHeader("Complaints manager", "Find Complaint screen");
 	printf("\n\n You can serch for a specific complaint by : ");
@@ -516,6 +558,13 @@ void GetSystemDate(char* sDate,size_t Size)
 		void ShowOrderedClaimsScreen()
 		{
 			//printf("\n ordered claims list screen will be here..");
+
+			if (!CheckAccessRights(pOrderedComplaintsList))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
+
 			DrawScreenHeader("Ordered Complaints", "By Priority");
 			SortComplaintsByPriority();
 			PrintSortedComplaintsByPriority();
@@ -524,14 +573,109 @@ void GetSystemDate(char* sDate,size_t Size)
 		void ShowStaticsMenuScreen()
 {
 	printf("\n statics and reports menu screen will be here.. ");
+	if (!CheckAccessRights(pStatistics))
+	{
+		PrintAccessDeniedMessage();
+		return;
+	}
+
 }
+
+
+		enum enManageUsersOption{eUsersList=1,eAddNewUsers=2,eDeleteUser=3,eUpdateUser=4,eFindUser};
+		enum enManageUsersOption ReadManageUsersMenuOption()
+		{
+			return (enum enManageUsersOption)ReadNumberInRange(1, 5, "\nchoose What do you want to do[1~5] ..");
+		}
+		void ShowManageUsersScreen(void);
+		void GoBackToManageMenuUsersScreen()
+		{
+			printf("\npress any key to go back to manage users menu screen..");
+			system("pause>0");
+			ShowManageUsersScreen();
+		}
+		void ShowUsersListScreen()
+		{
+			printf("\n users list screen will be here..");
+		}
+		void ShowAddNewUserScreen()
+		{
+			printf("\nadd new users screen will be here...");
+		}
+		void ShowDeleteUserScreen()
+		{
+			printf("\nDelete Users screen will be here..");
+		}
+		void ShowUpdateUserScreen()
+		{
+			printf("\nupdate user screen will be here..");
+		}
+		void ShowFindUserScreen()
+		{
+			printf("\nFind users screen will be here..");
+		}
+		PerformManageUsersMenuOption(enum enManageUsersOption Option)
+		{
+			switch (Option)
+			{
+			case eUsersList:
+				system("cls");
+				ShowUsersListScreen();
+				GoBackToManageMenuUsersScreen();
+				break;
+			case eAddNewUsers:
+				system("cls");
+				ShowAddNewUserScreen();
+				GoBackToManageMenuUsersScreen();
+				break;
+			case eDeleteUser:
+				system("cls");
+				ShowDeleteUserScreen();
+				GoBackToManageMenuUsersScreen();
+				break;
+			case eUpdateUser:
+				system("cls");
+				ShowUpdateUserScreen();
+				GoBackToManageMenuUsersScreen();
+				break;
+			case eFindUser:
+				system("cls");
+				ShowFindUserScreen();
+				GoBackToManageMenuUsersScreen();
+				break;
+			default:
+				break;
+			}
+		}
+
 		void ShowManageUsersScreen()
-{
-	printf("\n manage users screen will be here..");
-}
+		{
+			//printf("\n manage users screen will be here..");
+			if (!CheckAccessRights(pManageUsers))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
+
+			system("cls");
+			DrawScreenHeader("Complaints manager", "Manage Users");
+			printf("\n\n \t[1] Show Users List.");
+			printf("\n \t[2] Add New user .");
+			printf("\n \t[3] Delete User .");
+			printf("\n \t[4] Update User info .");
+			printf("\n \t[5] Find User  .");
+			PerformManageUsersMenuOption(ReadManageUsersMenuOption());
+
+		}
 		void ShowProcessComplaintScreen()
 		{
 			//printf("\n process complaintscreen will be here..");
+			if (!CheckAccessRights(pProcessComplaint))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
+
 			DrawScreenHeader("Complaints Manager", "Process Complaint");
 		
 			stComplaint Complaint;
