@@ -6,13 +6,17 @@
 #include <Windows.h>
 
 
+
+
+
+
 void ComplaintsManager(void);
 		typedef struct stUser;
 		//struct stUser CurrentUser;
 		void SetDefaultAdminInfo(void);
 		bool CheckIdentity(char*, size_t, char*, size_t);
 		void SignIn(void);
-		bool UserNameExists(char*, size_t);
+		bool UserNameExists(char*);
 		bool IsLowerCaseExist(char*, size_t);
 		bool IsUpperCaseExist(char*, size_t);
 		bool IsDigitExist(char*, size_t);
@@ -185,6 +189,8 @@ typedef struct
 	char Category[30];
 	enum enClaimStatus Status;
 	char Date[20];
+	time_t SubmissionMoment;
+	time_t ProcessingComplaintMoment;
 	char MadeBy[40];
 	char Notes[40];
 	enum enComplaintPriority Priority;
@@ -571,16 +577,148 @@ void GetSystemDate(char* sDate,size_t Size)
 			PrintSortedComplaintsByPriority();
 
 		}
-		void ShowStaticsMenuScreen()
-{
-	printf("\n statics and reports menu screen will be here.. ");
-	if (!CheckAccessRights(pStatistics))
-	{
-		PrintAccessDeniedMessage();
-		return;
-	}
 
-}
+
+
+		enum enStaticsMenuOption{eComplaintTotalNumber=1,eComplaintResolutionRate=2,eProcessTimeAverage=3,eDailyReport=4,eQuitStatics=5};
+		enum enStaticsMenuOption ReadStaticsMenuOption()
+		{
+			return (enum enStaticsMenuOption)ReadNumberInRange(1, 5, "\nChoose What do you wanna do [1~5] : ");
+		}
+		void GoBackToStaticsMenuScreen()
+		{
+			printf("\nPress any key to go back to Statics Menu Screen..");
+			system("pause>0");
+			ShowStaticsMenuScreen();
+		}
+
+		void ShowComplaintTotalNumberScreen()
+		{
+			//printf("\n Total number of Complaints will be here.. ");
+
+			DrawScreenHeader("Statistics & Reports", "ToTal number Of Comlaints");
+
+			if (ComplaintsCounter == 0)
+				printf("\n\n\n\t no available complaints!");
+			else
+				printf("\n\n\n\tTOTAL NUMBER OF COMPLAINTS : %d\n\n", ComplaintsCounter);
+		}
+
+		float CalculateResolutionRate()
+		{
+			if (ComplaintsCounter==0)
+				return 0;
+			int iResolvedComplaints = 0;
+			for (size_t i = 0; i < ComplaintsCounter; i++)
+			{
+				if (AllComplaints[i].Status != eInProgress)
+					++iResolvedComplaints;
+			}
+			return ((float)iResolvedComplaints/ ComplaintsCounter)*100;
+		}
+		void ShowComplaintResolutionRateScreen()
+		{
+			//printf("\nComplaint resolution Rate will be here.. ");
+			DrawScreenHeader("Statistics & Reports", "Resolution Rate");
+
+			if (ComplaintsCounter == 0)
+				printf("\n\n\nno available complaints!");
+			else
+				printf("\n\n\n\tNUMBER OF SOLVED COMPLAINTS OUT OF TOTAL COMPLAINTS : %.02f %%\n\n", CalculateResolutionRate());
+
+		}
+		int ArraySum(int arr[100], int arrLength)
+		{
+			int Sum = 0;
+			for (size_t i = 0; i < arrLength; i++)
+			{
+				Sum += arr[i];
+			}
+			return Sum;
+		}
+		float ArrayAverage(int arr[100], int arrLength)
+		{
+			return (float)ArraySum(arr, arrLength)/arrLength;
+		}
+		float CaluculateProcessTimeAverage()
+		{
+			int arrProcessPeriode[100];
+			int TotalTime = 0;
+			for (size_t i = 0; i < ComplaintsCounter; i++)
+			{
+				arrProcessPeriode[i] = difftime(AllComplaints[i].ProcessingComplaintMoment, AllComplaints[i].SubmissionMoment);
+			}
+			return ArrayAverage(arrProcessPeriode, ComplaintsCounter);
+
+		}
+		void ShowProcessTimeAverageScreen()
+		{
+			//printf("\n process average time will be here.. ");
+			DrawScreenHeader("STATICS & REPORTS", "AVERAGE TIME");
+			if (ComplaintsCounter == 0)
+				printf("\n\n\n\t no available complaints!");
+			else
+				printf("\n\n\n\taverage of time taken to process one complaint is :%.02f s .\n\n", CaluculateProcessTimeAverage());
+		}
+		void ShowDailyReportScreen()
+		{
+			//printf("\nDaily reports will be generated here.. ");
+			DrawScreenHeader("STATICS & REPORT", "GENERATE REPORT");
+
+			FILE *ptrMyFile;
+
+		}
+
+		void PerformStaticsMenuOption(enum enStaticsMenuOption Option)
+		{
+			switch (Option)
+			{
+			case eComplaintTotalNumber:
+				system("cls");
+				ShowComplaintTotalNumberScreen();
+				GoBackToStaticsMenuScreen();
+				break;
+			case eComplaintResolutionRate:
+				system("cls");
+				ShowComplaintResolutionRateScreen();
+				GoBackToStaticsMenuScreen();
+				break;
+			case eProcessTimeAverage:
+				system("cls");
+				ShowProcessTimeAverageScreen();
+				GoBackToStaticsMenuScreen();
+				break;
+			case eDailyReport:
+				system("cls");
+				ShowDailyReportScreen();
+				GoBackToStaticsMenuScreen();
+				break;
+			case eQuitStatics:
+				break;
+			default:
+				break;
+			}
+		}
+		void ShowStaticsMenuScreen()
+		{
+			//printf("\n statics and reports menu screen will be here.. ");
+			system("cls");  
+			if (!CheckAccessRights(pStatistics))
+			{
+				PrintAccessDeniedMessage();
+				return;
+			}
+				DrawScreenHeader("Complaints Management", "STATISTICS & REPORTS");
+				printf("\n%10s%s", "", "[1] Show total number of complaints.");
+				printf("\n%10s%s", "", "[2] Show Complaint Resolution Rate.");
+				printf("\n%10s%s", "", "[3] Show Taken Time To process a complaint.");
+				printf("\n%10s%s", "", "[4] Generate Report.");
+				printf("\n%10s%s", "", "[5] Exit.");
+
+				PerformStaticsMenuOption(ReadStaticsMenuOption());
+			
+		
+		}
 
 
 		enum enManageUsersOption{eUsersList=1,eAddNewUsers=2,eDeleteUser=3,eUpdateUser=4,eFindUser=5,eQuitManageMenu=6};
@@ -964,7 +1102,7 @@ void GetSystemDate(char* sDate,size_t Size)
 
 							ReadString(AllComplaints[i].Notes, sizeof(AllComplaints[i].Notes), "\n your notes : ");
 						}
-
+						AllComplaints[i].ProcessingComplaintMoment = time(NULL);
 						break;
 					}
 				}
@@ -1127,7 +1265,9 @@ void GetSystemDate(char* sDate,size_t Size)
 			printf("\n Description : %s", AllComplaints[ComplaintsCounter].Description);
 			printf("\n\n date : %s", AllComplaints[ComplaintsCounter].Date);
 
+			AllComplaints[ComplaintsCounter].SubmissionMoment=time(NULL);
 			ComplaintsCounter++;
+
 		}
 		void ShowComplaintsListByClientScreen()
 		{
@@ -1150,12 +1290,58 @@ void GetSystemDate(char* sDate,size_t Size)
 
 
 		}
+
+		bool CanClientUpdateComplaint(int ID)
+		{
+			
+			for (size_t i = 0; i < ComplaintsCounter; i++)
+			{
+				if (AllComplaints[i].ID == ID)
+				{
+					return ((AllComplaints[i].Status == eInProgress)
+						&&
+						((difftime(time(NULL), AllComplaints[i].SubmissionMoment)<=24*3600)));
+				}
+			}
+			return false;
+		}
+
 		void ShowUpdateComplaintByClientScreen()
 		{
 			//printf("\n update complaint by client will be here..");
 			DrawScreenHeader("Complaints manager", "Edit Complaint");
 
+			int ID = ReadPositiveNumber("\nPlease your complaint ID you wanna Update\n\t(note that you can only update your complaint if it is still under processing whithin period of 24 hours since submission date) : ");
+			stComplaint Complaint;
+			if (FindComplaintByID(&Complaint, ID))
+			{
+				PrintComplaintInfo(Complaint);
+				if (CanClientUpdateComplaint(Complaint.ID))
+				{
+					char Answer = 'n';
+					printf("\nare you sure do you wanna update the complaint above [Y/N]: ");
+					scanf_s(" %c", &Answer); getchar();
+					if (tolower(Answer) == 'y')
+					{
+						for (size_t i = 0; i < ComplaintsCounter; i++)
+						{
+							ReadString(AllComplaints[i].Reason, sizeof(AllComplaints[ComplaintsCounter].Reason), "\nComplaint Reason : ");
+							ReadString(AllComplaints[i].Description, sizeof(AllComplaints[ComplaintsCounter].Description), "\nDescription : ");
+							ReadString(AllComplaints[i].Category, sizeof(AllComplaints[ComplaintsCounter].Category), "\nCategory : ");
+							SetComplaintPriority();
 
+							printf("\n\a updated successfully!");
+							break;
+						}
+					}
+					else
+						printf("\n operation canceled!");
+				}
+				else
+					printf("\nyou cannot update this complaint.");
+			}
+			else
+				printf("\n the complaint you are looking for is not found!");
 
 		}
 		void PerformClientMenuOption(enum enClientMenuOption Option)
