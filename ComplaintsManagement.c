@@ -12,7 +12,7 @@ void ComplaintsManager(void);
 		void SetDefaultAdminInfo(void);
 		bool CheckIdentity(char*, size_t, char*, size_t);
 		void SignIn(void);
-		bool UserNameExist(char*, size_t);
+		bool UserNameExists(char*, size_t);
 		bool IsLowerCaseExist(char*, size_t);
 		bool IsUpperCaseExist(char*, size_t);
 		bool IsDigitExist(char*, size_t);
@@ -154,8 +154,9 @@ enum enPermissions
 
 bool CheckAccessRights(enum enPermission Permission)
 {
-	return ((enum enPermission)CurrentUser.Permssions) == pNothing ? false : (enum enPermission)CurrentUser.Permssions == pFullAccess ? true 
-		: CurrentUser.Permssions & Permission == Permission ? true : false;
+	return ((enum enPermission)CurrentUser.Permssions) == pNothing ? false :
+		((enum enPermission)CurrentUser.Permssions == pFullAccess ? true 
+		: ((CurrentUser.Permssions & Permission) == Permission)) ;
 }
 
 enum enMainMenuOption
@@ -409,7 +410,7 @@ void GetSystemDate(char* sDate,size_t Size)
 						FindComplaintByID(&Complaint, AllComplaints[i].ID);
 						printf("\n\nComplaint %d : \n", ++Counter);
 						PrintComplaintInfo(Complaint);
-						break;
+						
 					}
 				}
 				(Counter == 0) ? printf("\n no complaints for this name : \"%s\"", Complaint.MadeBy) : printf("");
@@ -582,10 +583,10 @@ void GetSystemDate(char* sDate,size_t Size)
 }
 
 
-		enum enManageUsersOption{eUsersList=1,eAddNewUsers=2,eDeleteUser=3,eUpdateUser=4,eFindUser};
+		enum enManageUsersOption{eUsersList=1,eAddNewUsers=2,eDeleteUser=3,eUpdateUser=4,eFindUser=5,eQuitManageMenu=6};
 		enum enManageUsersOption ReadManageUsersMenuOption()
 		{
-			return (enum enManageUsersOption)ReadNumberInRange(1, 5, "\nchoose What do you want to do[1~5] ..");
+			return (enum enManageUsersOption)ReadNumberInRange(1, 6, "\nchoose What do you want to do[1~6] ..");
 		}
 		void ShowManageUsersScreen(void);
 		void GoBackToManageMenuUsersScreen()
@@ -594,25 +595,282 @@ void GetSystemDate(char* sDate,size_t Size)
 			system("pause>0");
 			ShowManageUsersScreen();
 		}
+
+		void PrintUserRecordLine(stUser User)
+		{
+			printf("\n\t|%-45s|%-20s|%-20s|%-11d|", User.FullName, User.UserName, User.Password, User.Permssions);
+		}
 		void ShowUsersListScreen()
 		{
-			printf("\n users list screen will be here..");
+			//printf("\n users list screen will be here..");
+			DrawScreenHeader("MANAGE USERS", "USERS LIST");
+
+			printf("\n\t%s%s\n", "___________________________________________",
+				"_________________________________________________________");
+
+			printf("\t|%-45s|%-20s|%-20s|%-11s|", "FullName", "username", "password", "Permissions");
+			printf("\n\t%s%s\n", "___________________________________________",
+				"_________________________________________________________");
+
+
+			if (UsersCounter == 0)
+			{
+				printf("\n no available users in the system!");
+			}
+			else
+			{
+				for (size_t i = 0; i < UsersCounter; i++)
+				{
+					PrintUserRecordLine(aUsers[i]);
+				}
+
+			}
+			printf("\n\t%s%s\n", "___________________________________________",
+				"_________________________________________________________");
+
 		}
+
+		int ReadUserPermissions()
+		{
+			int Permissions = 0;
+			char Answer = 'n';
+			printf("\n Do you want to give him full access [Y/N]..");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+				return -1;
+			printf("\ndo you want to give him access to : ");
+			printf("\n\t-Complaints List [Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pComplaintsList;
+			}
+			
+			printf("\n\t-Update Complaint [Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pUpdateComplaint;
+			}
+
+
+			printf("\n\t-Delete complaint [Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pDeleteComplaint;
+			}
+
+			printf("\n\t-Find Complaint [Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pFindComplaint;
+			}
+
+			printf("\n\t-Process Complaint [Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pProcessComplaint;
+			}
+
+			printf("\n\t-Complaints ordered by priority[Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pOrderedComplaintsList;
+			}
+
+			printf("\n\t-Statics and Reports [Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pStatistics;
+			}
+
+			printf("\n\t-MANAGE USERS [Y/N]");
+			scanf_s(" %c", &Answer); getchar();
+			if (tolower(Answer) == 'y')
+			{
+				Permissions += pManageUsers;
+			}
+
+			return Permissions;
+
+		}
+		bool UserNameExists(char* );
+		void PrintUserPermissions(int );
+		void PrintUserCard(stUser);
+		bool FindUserByUserName(char* ,stUser *);
 		void ShowAddNewUserScreen()
 		{
-			printf("\nadd new users screen will be here...");
+			//printf("\nadd new users screen will be here...");
+			DrawScreenHeader("Manage users", "Add new User");
+			stUser NewUser;
+			ReadString(NewUser.FullName, sizeof(NewUser.FullName), "\nFullName : ");
+			ReadString(NewUser.UserName, sizeof(NewUser.UserName), "\nUserName : ");
+			while (UserNameExists(NewUser.UserName))
+			{
+				ReadString(NewUser.UserName, sizeof(NewUser.UserName), "\nAlready exists.choose an other one : ");
+			}
+			ReadString(NewUser.Password, sizeof(NewUser.Password), "\nPassword : ");
+			NewUser.IsClient = false;
+			NewUser.Permssions = ReadUserPermissions();
+			aUsers[UsersCounter] = NewUser;
+			UsersCounter++;
+			printf("\nadded successfully!");
+			PrintUserCard(NewUser);
+		}
+		void  DeleteUserByUserName(char *UserName)
+		{
+			size_t i = 0;
+			for (i = 0; i < UsersCounter; i++)
+			{
+				if (strcmp(aUsers[i].UserName, UserName) == 0)
+				{
+					break;
+				}
+			}
+			//moving array elements by 1:
+			for (size_t j = i; j < UsersCounter-1; j++)
+			{
+				aUsers[j] = aUsers[j + 1];
+			}
+			//decrease arraysize by one;
+			--UsersCounter;
 		}
 		void ShowDeleteUserScreen()
+		{			//printf("\nDelete Users screen will be here..");
+			DrawScreenHeader("MANAGE USERS", "delete User");
+
+			stUser User;
+			char UserName[20];
+			ReadString(UserName, sizeof(UserName), "\nEnter a username : ");
+			char Answer = 'n';
+			if (FindUserByUserName(UserName, &User))
+			{
+				PrintUserCard(User);
+				printf("\nAre you sure do you want to delete the user above [Y/N] : ");
+				scanf_s(" %c", &Answer); getchar();
+				if (tolower(Answer) == 'y')
+				{
+					DeleteUserByUserName(UserName);
+					printf("\n the user deleted successfully !");
+				}
+				else
+					printf("\n canceled!");
+			}
+			else
+				printf("\n the user with \"%s\" is not found!", UserName);
+		}
+
+		void UpdateUserByUserName(char UserName[])
 		{
-			printf("\nDelete Users screen will be here..");
+			for (size_t i = 0; i < UsersCounter; i++)
+			{
+				if (strcmp(aUsers[i].UserName, UserName)==0)
+				{
+					ReadString(aUsers[i].FullName, sizeof(aUsers[i].FullName), "\n new Name : ");
+					ReadString(aUsers[i].Password, sizeof(aUsers[i].Password), "\nNew Password : ");
+					aUsers[i].Permssions = ReadUserPermissions();
+					break;
+				}
+			}
 		}
 		void ShowUpdateUserScreen()
 		{
-			printf("\nupdate user screen will be here..");
+			//printf("\nupdate user screen will be here..");
+
+			DrawScreenHeader("MANAGE USER", "UPDATE USER");
+
+			stUser User;
+			char UserName[20];
+			ReadString(UserName, sizeof(UserName), "\nEnter a username : ");
+			char Answer = 'n';
+			if (FindUserByUserName(UserName, &User))
+			{
+				PrintUserCard(User);
+				printf("\nAre you sure do you want to Update the user above [Y/N] : ");
+				scanf_s(" %c", &Answer); getchar();
+				if (tolower(Answer) == 'y')
+				{
+					UpdateUserByUserName(UserName);
+					printf("\n the user Updated successfully !");
+				}
+				else
+					printf("\n canceled!");
+			}
+			else
+				printf("\n the user with \"%s\" is not found!", UserName);
+
+
+		}
+
+
+		void PrintUserPermissions(int Permissions)
+		{
+			if (Permissions == pFullAccess)
+				printf("\n\tFull Access");
+			else if(Permissions==pNothing)
+				printf("\n he connot access to any screen !");
+			else if (Permissions != 0)
+			{
+				printf("\nthis user has access to : ");
+				if ((Permissions & pComplaintsList) == pComplaintsList)
+					printf("\n\t-Complaints list.");
+				if ((Permissions & pUpdateComplaint) == pUpdateComplaint)
+					printf("\n\t-Update complaint.");
+				if ((Permissions & pDeleteComplaint) == pDeleteComplaint)
+					printf("\n\t-Delete complaint.");
+				if ((Permissions & pFindComplaint) == pFindComplaint)
+					printf("\n\t-Find Complaint.");
+				if ((Permissions & pProcessComplaint) == pProcessComplaint)
+					printf("\n\t-Process Complaint.");
+				if ((Permissions & pOrderedComplaintsList) == pOrderedComplaintsList)
+					printf("\n\t-Ordered Complaints list by priority.");
+				if ((Permissions & pStatistics) == pStatistics)
+					printf("\n\t-Statistics.");
+				if ((Permissions & pManageUsers) == pManageUsers)
+					printf("\n\t-Manage Users.");
+			}
+		}
+		void PrintUserCard(stUser User)
+		{
+			printf("\n the followinge are the user's info : ");
+			printf("\n%s", "________________________________________");
+			printf("\n Full Name : %s\nUserName : %s\nPassword : %s",User.FullName,User.UserName,User.Password);
+			PrintUserPermissions(User.Permssions);
+			printf("\n%s", "________________________________________");
+
+		}
+		bool FindUserByUserName(char* UserName,stUser *User)
+		{
+			for (size_t i = 0; i < UsersCounter; i++)
+			{
+				if (strcmp(aUsers[i].UserName, UserName) == 0)
+				{
+					*User = aUsers[i];
+					return true;
+				}
+			}
+			return false;//if you reached here ,the the user is not found!
+
 		}
 		void ShowFindUserScreen()
 		{
-			printf("\nFind users screen will be here..");
+			//printf("\nFind users screen will be here..");
+			DrawScreenHeader("Manage Users", "Find User");
+			char UserName[20];
+			stUser User;
+			ReadString(UserName, sizeof(UserName), "\n Enter a username to serch for : ");
+			if (FindUserByUserName(UserName,&User))
+			{
+				printf("\nfound!");
+				PrintUserCard(User);
+			}
+			else
+				printf("\n the user with username : \"%s\" is not found!", UserName);
 		}
 		PerformManageUsersMenuOption(enum enManageUsersOption Option)
 		{
@@ -643,6 +901,8 @@ void GetSystemDate(char* sDate,size_t Size)
 				ShowFindUserScreen();
 				GoBackToManageMenuUsersScreen();
 				break;
+			case eQuitManageMenu:
+				break;
 			default:
 				break;
 			}
@@ -664,6 +924,7 @@ void GetSystemDate(char* sDate,size_t Size)
 			printf("\n \t[3] Delete User .");
 			printf("\n \t[4] Update User info .");
 			printf("\n \t[5] Find User  .");
+			printf("\n \t[6] exit  .");
 			PerformManageUsersMenuOption(ReadManageUsersMenuOption());
 
 		}
@@ -869,12 +1130,33 @@ void GetSystemDate(char* sDate,size_t Size)
 			ComplaintsCounter++;
 		}
 		void ShowComplaintsListByClientScreen()
-{
-	printf("\n complaints made by the current client will be here.. ");
-}
+		{
+			//printf("\n complaints made by the current client will be here.. ");
+			DrawScreenHeader("Complaints manager", "Show Client Complaints");
+			short Counter = 0;
+			stComplaint Complaint;
+			strcpy_s(Complaint.MadeBy, sizeof(Complaint.MadeBy), CurrentUser.FullName);
+			for (short i = 0; i < ComplaintsCounter; i++)
+			{
+				if (strcmp(AllComplaints[i].MadeBy, Complaint.MadeBy) == 0)
+				{
+					FindComplaintByID(&Complaint, AllComplaints[i].ID);
+					printf("\n\nComplaint %d : \n", ++Counter);
+					PrintComplaintInfo(Complaint);
+					
+				}
+			}
+			(Counter == 0) ? printf("\n no complaints for this name : \"%s\"", Complaint.MadeBy) : printf("");
+
+
+		}
 		void ShowUpdateComplaintByClientScreen()
 		{
-			printf("\n update complaint by client will be here..");
+			//printf("\n update complaint by client will be here..");
+			DrawScreenHeader("Complaints manager", "Edit Complaint");
+
+
+
 		}
 		void PerformClientMenuOption(enum enClientMenuOption Option)
 		{
@@ -962,8 +1244,8 @@ void SignIn()
 			{
 				printf("\n\a wrong username/password!");
 				printf("\n You have (%hd) trials to login : ", --Counter);
-				ReadString(UserName, sizeof(UserName), "\nUserName : ");
-				ReadString(Password, sizeof(Password), "\nPassword : ");
+				//ReadString(UserName, sizeof(UserName), "\nUserName : ");
+				//ReadString(Password, sizeof(Password), "\nPassword : ");
 
 			}
 			else
@@ -987,7 +1269,7 @@ void SignIn()
 
 }
 
-bool UserNameExist(char* UserName, size_t Size)
+bool UserNameExists(char* UserName)
 {
 	for (short i = 0; i < UsersCounter; i++)
 	{
@@ -1057,7 +1339,7 @@ void SignUp()
 
 
 	ReadString(UserName, sizeof(UserName), "\nUserName : ");
-	while (UserNameExist(UserName, sizeof(UserName)))
+	while (UserNameExists(UserName))
 	{
 		printf("\n Username already exists try again..");
 		ReadString(UserName, sizeof(UserName), "\nUserName : ");
@@ -1077,9 +1359,9 @@ void SignUp()
 	aUsers[UsersCounter - 1].IsClient = true;
 	aUsers[UsersCounter - 1].Permssions = 0;
 
-	printf("\nDone Successfully! \nusername : %s , Password : %s\npress any key to continue..", UserName, Password);
+	printf("\nDone Successfully!");
 	
-	system("pause>0");
+	Sleep(3 * 1000);
 	SignIn();
 }
 
