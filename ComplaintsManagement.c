@@ -37,7 +37,7 @@ void ComplaintsManager(void);
 void SignUp(void);
 void SetUserName(char[]);
 bool UserNameExists(char*);
-void SetPassword(char[]);
+void SetPassword(char[],size_t);
 bool IsValidPassword(char[]);
 bool CheckPasswordStrength(char*);
 bool IsSpecialCharExist(char*, size_t);
@@ -133,7 +133,6 @@ int main()
 {
 	//seeds the random numbers generator in C,called only once;
 	srand((unsigned)time(NULL));
-	//ShowMainMenuScreen();
 	ComplaintsManager();
 
 	return 0;
@@ -243,13 +242,13 @@ void ReadString(char S1[], size_t Size, const char Message[])
 
 	do
 	{
-		fgets(S1, Size + 1, stdin);
+		fgets(S1,Size, stdin);
 		size_t StringLength = strlen(S1);
 
 		// removing the new line char due to use fgets():
 		if (StringLength > 0 && S1[StringLength - 1] == '\n')
 			S1[StringLength - 1] = '\0';
-
+	
 	} while (strlen(S1) == 0);//make sure that the string entered is not empty
 }
 int RandomNumber(int From, int To)
@@ -267,7 +266,7 @@ void DrawScreenHeader(const char Title[], const char Subtitle[])
 
 	time_t Now = time(NULL);
 	printf("\n%15s%s%s", "", "current time : ", ctime(&Now));
-	if (UsersCounter != 0)
+	if (UsersCounter >=1)
 	{
 		printf("\n%15s%s%s\n\n", "", "Current User : ", aUsers[UsersCounter - 1].UserName);
 
@@ -278,6 +277,7 @@ void PrintAccessDeniedMessage()
 {
 	system("cls");
 	DrawScreenHeader("ACCESS DENIED", "CONTACT YOUR ADMIN");
+	system("color f4");
 }
 bool CheckAccessRights(enum enPermission Permission)
 {
@@ -314,7 +314,6 @@ void ComplaintsManager()
 	printf("\n\n\n Please Sign in  if you already have an account .\n if you don't then thanks for singing up : ");
 	printf("\n\n\t [1] SIGN UP ");
 	printf("\n\n\t [2] SIGN IN \n");
-	SetDefaultAdminInfo();
 	int Choice = ReadNumberInRange(1, 2, "\n please make a choice from the menu above ,you can either sign up or sign in : \n");
 
 	Choice == 1 ? SignUp() : SignIn();
@@ -331,7 +330,7 @@ void SignUp()
 	ReadString(Name, sizeof(Name), "\nYour Name : ");
 
 	SetUserName(aUsers[++UsersCounter - 1].UserName);
-	SetPassword(aUsers[UsersCounter - 1].Password);
+	SetPassword(aUsers[UsersCounter - 1].Password, sizeof(aUsers[UsersCounter - 1].Password));
 
 	strcpy_s(aUsers[UsersCounter - 1].FullName, sizeof(aUsers[UsersCounter - 1].FullName), Name);
 	aUsers[UsersCounter - 1].IsClient = true;
@@ -367,9 +366,9 @@ bool UserNameExists(char* UserName)
 	return false;
 }
 
-void SetPassword(char Password[])
+void SetPassword(char Password[],size_t Size)
 {
-	ReadString(Password, sizeof(Password), "\nPassword : ");
+	ReadString(Password, Size, "\nPassword : ");
 	while (!IsValidPassword(Password))
 	{
 		system("color 04");//set color to red
@@ -438,11 +437,17 @@ void SignIn()
 {
 	char UserName[20], Password[20];
 	short Counter = 3;
+	bool IsFirstSignIn = true;
 
 	do
 	{
 		system("cls");
 		DrawScreenHeader("COMPLAINTS SECTION", "SIGN IN");
+		if (IsFirstSignIn)
+		{
+			SetDefaultAdminInfo();
+			IsFirstSignIn = false;
+		}
 		system("color 09");//set color to blue
 
 		ReadString(UserName, sizeof(UserName), "\nUserName : ");
@@ -1437,7 +1442,7 @@ void ShowAddNewUserScreen()
 	system("color 0a");//set color to green
 	ReadString(aUsers[UsersCounter].FullName, sizeof(aUsers[UsersCounter].FullName), "\nFullName : ");
 	SetUserName(aUsers[UsersCounter].UserName);
-	SetPassword(aUsers[UsersCounter].Password);
+	SetPassword(aUsers[UsersCounter].Password,sizeof(aUsers[UsersCounter].Password));
 	aUsers[UsersCounter].Permssions = ReadUserPermissions();
 
 	UsersCounter++;
